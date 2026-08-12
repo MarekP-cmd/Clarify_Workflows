@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clarity Workflows</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --ink: #151923;
+        --muted: #6f7580;
+        --panel: #f8f5ef;
+        --paper: #fffdf9;
+        --line: rgba(36, 42, 56, 0.13);
+        --graphite: #17191e;
+        --violet: #7568f7;
+        --blue: #4b86ef;
+        --teal: #34a684;
+        --amber: #c88720;
+        --danger: #b64d48;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-width: 320px; min-height: 100%; background: transparent; }
+      button { font: inherit; }
+
+      .shell {
+        min-height: 610px;
+        overflow: hidden;
+        color: var(--ink);
+        background: var(--panel);
+        border: 1px solid rgba(80, 76, 68, 0.17);
+        border-radius: 22px;
+        box-shadow: 0 18px 60px rgba(20, 22, 29, 0.13);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 18px;
+        color: #f8f8fb;
+        background: linear-gradient(135deg, #191b21, #252832);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+
+      .brand, .status-cluster, .run-state { display: flex; align-items: center; gap: 10px; }
+      .brand-mark {
+        width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center;
+        background: linear-gradient(135deg, #5f8df8, #8068ed); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28);
+      }
+      .brand-mark svg { width: 18px; height: 18px; }
+      .brand strong { display: block; font-size: 14px; letter-spacing: -.01em; }
+      .brand span { display: block; margin-top: 2px; color: #adb1bd; font-size: 11px; }
+      .pill {
+        display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 9px;
+        border-radius: 999px; color: #cacdf5; background: rgba(117,104,247,.15); border: 1px solid rgba(138,126,255,.28);
+        font-size: 11px; font-weight: 650;
+      }
+      .dot { width: 7px; height: 7px; border-radius: 50%; background: #54d6a3; box-shadow: 0 0 0 3px rgba(84,214,163,.12); }
+
+      .body-grid { display: grid; grid-template-columns: minmax(0, 1fr) 292px; min-height: 452px; }
+      .graph-panel { min-width: 0; padding: 15px; border-right: 1px solid var(--line); }
+      .graph-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+      .graph-toolbar strong { font-size: 13px; }
+      .graph-toolbar span { color: var(--muted); font-size: 11px; }
+
+      .canvas {
+        position: relative; min-height: 392px; overflow: hidden; border-radius: 16px;
+        background-color: #1b1e25;
+        background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.12) 1px, transparent 0);
+        background-size: 20px 20px;
+        border: 1px solid rgba(18,20,26,.22);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+      }
+      .edges { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+      .node-layer { position: absolute; inset: 0; }
+      .node {
+        position: absolute; width: 166px; min-height: 68px; padding: 10px 11px; text-align: left;
+        color: #f6f7fb; background: rgba(47, 51, 61, .97); border: 1px solid rgba(255,255,255,.12);
+        border-radius: 13px; box-shadow: 0 12px 24px rgba(0,0,0,.23); cursor: pointer;
+        transform: translate(-50%, -50%); transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+      }
+      .node:hover, .node:focus-visible { border-color: rgba(130,151,255,.75); transform: translate(-50%, -50%) scale(1.018); outline: none; }
+      .node[aria-pressed="true"] { border-color: #8175ff; box-shadow: 0 0 0 3px rgba(117,104,247,.17), 0 16px 30px rgba(0,0,0,.27); }
+      .node.candidate { border-color: rgba(200,135,32,.9); box-shadow: 0 0 0 3px rgba(200,135,32,.14), 0 16px 30px rgba(0,0,0,.28); }
+      .node-head { display: flex; align-items: center; gap: 8px; }
+      .kind-dot { width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; background: var(--blue); }
+      .kind-dot.dataset { background: var(--teal); border-radius: 50%; }
+      .kind-dot.hypothesis, .kind-dot.result { background: var(--violet); transform: rotate(45deg); }
+      .kind-dot.code { background: #e28268; }
+      .kind-dot.question { background: #d4a448; border-radius: 50%; }
+      .node-title { overflow: hidden; color: #f5f6fa; font-size: 11px; font-weight: 720; text-overflow: ellipsis; white-space: nowrap; }
+      .node-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; color: #aeb3bf; font-size: 9px; }
+      .node-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .schema-chip { padding: 2px 5px; border-radius: 5px; color: #c9cdf9; background: rgba(117,104,247,.12); }
+
+      .inspector { min-width: 0; padding: 16px; background: var(--paper); }
+      .inspector-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+      .inspector-kicker { margin: 0 0 5px; color: var(--violet); font-size: 10px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+      .inspector h2 { margin: 0; font-size: 15px; line-height: 1.25; letter-spacing: -.015em; }
+      .status-badge { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; color: #4f5868; background: #f0ece4; font-size: 9px; font-weight: 700; }
+      .inspector-section { padding: 12px 0; border-bottom: 1px solid var(--line); }
+      .inspector-section:last-child { border-bottom: 0; }
+      .section-label { margin-bottom: 6px; color: #7b808a; font-size: 9px; font-weight: 750; text-transform: uppercase; letter-spacing: .08em; }
+      .section-copy { margin: 0; color: #3f4550; font-size: 11px; line-height: 1.5; white-space: pre-wrap; }
+      .meta-row { display: grid; grid-template-columns: 78px minmax(0,1fr); gap: 8px; margin: 7px 0; font-size: 10px; }
+      .meta-row span:first-child { color: #898e97; }
+      .meta-row span:last-child { color: #333943; overflow-wrap: anywhere; }
+      .annotation { margin-top: 8px; padding: 9px; border-radius: 10px; background: #f5f1e9; }
+      .annotation.ai { background: #f0effb; }
+      .annotation strong { display: block; margin-bottom: 4px; font-size: 9px; }
+      .annotation p { margin: 0; color: #555b66; font-size: 10px; line-height: 1.4; white-space: pre-wrap; }
+      .citation-card { margin-top: 8px; padding: 9px; border: 1px solid rgba(117,104,247,.18); border-radius: 10px; background: #f4f2ff; }
+      .citation-card strong { display: block; color: #3e397a; font-size: 10px; }
+      .citation-card p { margin: 6px 0 0; color: #4f5361; font-size: 10px; line-height: 1.45; white-space: pre-wrap; }
+      .citation-card.unverified { border-color: rgba(200,135,32,.35); background: #fff8e9; }
+      .citation-card.unverified strong { color: #805612; }
+      .citation-id { display: block; margin-top: 5px; color: #888d99; font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+
+      .safety {
+        display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center;
+        padding: 13px 16px; background: #fbf8f2; border-top: 1px solid var(--line);
+      }
+      .stages { display: grid; grid-template-columns: repeat(4, minmax(105px, 1fr)); gap: 7px; }
+      .stage { position: relative; min-height: 50px; padding: 8px 9px 8px 30px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper); }
+      .stage::before { content: ""; position: absolute; left: 10px; top: 13px; width: 10px; height: 10px; border-radius: 50%; background: #c5c7ce; }
+      .stage.passed::before { background: var(--teal); box-shadow: 0 0 0 3px rgba(52,166,132,.12); }
+      .stage.required::before { background: var(--amber); box-shadow: 0 0 0 3px rgba(200,135,32,.12); }
+      .stage strong { display: block; font-size: 10px; }
+      .stage span { display: block; margin-top: 4px; color: var(--muted); font-size: 9px; }
+      .review-actions { display: flex; align-items: center; gap: 8px; }
+      .review-actions[hidden] { display: none; }
+      .action {
+        min-height: 35px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
+        color: #303641; background: #fffdf9; font-weight: 700; font-size: 10px; cursor: pointer;
+      }
+      .action.approve { color: #fff; background: #b87918; border-color: #b87918; }
+      .action.reject { color: var(--danger); }
+      .action:disabled { opacity: .5; cursor: wait; }
+      .message { min-width: 170px; max-width: 260px; color: var(--muted); font-size: 9px; line-height: 1.35; text-align: right; }
+
+      @media (max-width: 760px) {
+        .shell { border-radius: 16px; }
+        .body-grid { grid-template-columns: 1fr; }
+        .graph-panel { border-right: 0; }
+        .inspector { border-top: 1px solid var(--line); }
+        .stages { grid-template-columns: repeat(2, 1fr); }
+        .safety { grid-template-columns: 1fr; }
+        .review-actions { justify-content: flex-start; flex-wrap: wrap; }
+        .message { text-align: left; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell" aria-label="Clarity Workflows interactive graph">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="6" cy="12" r="2.2"/><circle cx="18" cy="6" r="2.2"/><circle cx="18" cy="18" r="2.2"/>
+              <path d="M8 11l7.8-4M8 13l7.8 4"/>
+            </svg>
+          </div>
+          <div><strong>Clarity Workflows</strong><span id="workspace-name">Private workgraph</span></div>
+        </div>
+        <div class="status-cluster">
+          <span class="pill"><span class="dot"></span>Private development</span>
+          <span class="pill" id="run-pill">Waiting for graph</span>
+        </div>
+      </header>
+
+      <div class="body-grid">
+        <section class="graph-panel" aria-label="Workflow graph">
+          <div class="graph-toolbar">
+            <div><strong>Research graph</strong> <span id="graph-count"></span></div>
+            <span>Schema.org + Clarity ontology</span>
+          </div>
+          <div class="canvas" id="canvas">
+            <svg class="edges" id="edges" aria-hidden="true"></svg>
+            <div class="node-layer" id="nodes"></div>
+          </div>
+        </section>
+
+        <aside class="inspector" aria-live="polite">
+          <div class="inspector-heading">
+            <div><p class="inspector-kicker" id="inspector-kind">Inspector</p><h2 id="inspector-title">Select a node</h2></div>
+            <span class="status-badge" id="inspector-status">Ready</span>
+          </div>
+          <div id="inspector-content">
+            <section class="inspector-section"><p class="section-copy">Select a graph node to inspect its provenance, annotations, and semantic type.</p></section>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="safety">
+        <div class="stages" aria-label="Two Gates plus Pure Agent status">
+          <div class="stage" id="stage-pre"><strong>Pre-tool gate</strong><span id="stage-pre-copy">Ready</span></div>
+          <div class="stage passed"><strong>Pure agent</strong><span>No side effects</span></div>
+          <div class="stage" id="stage-post"><strong>Post-tool gate</strong><span id="stage-post-copy">Ready</span></div>
+          <div class="stage required" id="stage-human"><strong>Human approval</strong><span id="stage-human-copy">Required</span></div>
+        </div>
+        <div class="review-actions" id="review-actions" hidden>
+          <span class="message" id="review-message">Requesting a private approval challenge…</span>
+          <button class="action reject" id="reject-button" type="button" disabled>Reject</button>
+          <button class="action approve" id="approve-button" type="button" disabled>Approve &amp; commit</button>
+        </div>
+      </footer>
+    </main>
+
+    <script type="module">
+      const elements = {
+        workspaceName: document.querySelector('#workspace-name'),
+        runPill: document.querySelector('#run-pill'),
+        graphCount: document.querySelector('#graph-count'),
+        canvas: document.querySelector('#canvas'),
+        edges: document.querySelector('#edges'),
+        nodes: document.querySelector('#nodes'),
+        inspectorKind: document.querySelector('#inspector-kind'),
+        inspectorTitle: document.querySelector('#inspector-title'),
+        inspectorStatus: document.querySelector('#inspector-status'),
+        inspectorContent: document.querySelector('#inspector-content'),
+        stagePre: document.querySelector('#stage-pre'),
+        stagePreCopy: document.querySelector('#stage-pre-copy'),
+        stagePost: document.querySelector('#stage-post'),
+        stagePostCopy: document.querySelector('#stage-post-copy'),
+        stageHuman: document.querySelector('#stage-human'),
+        stageHumanCopy: document.querySelector('#stage-human-copy'),
+        reviewActions: document.querySelector('#review-actions'),
+        reviewMessage: document.querySelector('#review-message'),
+        approveButton: document.querySelector('#approve-button'),
+        rejectButton: document.querySelector('#reject-button'),
+      };
+
+      let rpcId = 0;
+      const pendingRequests = new Map();
+      let latestView = null;
+      let selectedNodeId = null;
+      let approvalToken = null;
+      let challengeRunId = null;
+      let challengePending = false;
+      let reviewBusy = false;
+      let renderedGraph = null;
+      let edgeFrame = 0;
+      let resizeFrame = 0;
+
+      function rpcNotify(method, params = {}) {
+        window.parent.postMessage({ jsonrpc: '2.0', method, params }, '*');
+      }
+
+      function rpcRequest(method, params = {}) {
+        return new Promise((resolve, reject) => {
+          const id = ++rpcId;
+          pendingRequests.set(id, { resolve, reject });
+          window.parent.postMessage({ jsonrpc: '2.0', id, method, params }, '*');
+        });
+      }
+
+      function structured(result) {
+        return result?.structuredContent ?? result?.result?.structuredContent ?? null;
+      }
+
+      function toolCallError(result) {
+        const response = result?.result ?? result;
+        if (response?.isError !== true) return null;
+        const message = Array.isArray(response.content)
+          ? response.content.find((item) => item?.type === 'text' && typeof item.text === 'string')?.text
+          : null;
+        return new Error(message || 'Clarity tool call failed.');
+      }
+
+      async function callTool(name, payload) {
+        await bridgeReady;
+        const result = await rpcRequest('tools/call', { name, arguments: payload });
+        const error = toolCallError(result);
+        if (error) throw error;
+        return result;
+      }
+
+      function make(tag, className, text) {
+        const element = document.createElement(tag);
+        if (className) element.className = className;
+        if (text !== undefined) element.textContent = text;
+        return element;
+      }
+
+      function displayNodes() {
+        if (!latestView) return [];
+        // The review surface is a projection. Never append the temporary
+        // candidate to the authoritative tool result in memory: rebuilding or
+        // selecting repeatedly must remain idempotent.
+        const nodes = [...latestView.workspace.nodes];
+        const run = latestView.activeRun;
+        if (run?.status === 'awaiting_approval') {
+          const maxX = nodes.reduce((maximum, node) => Math.max(maximum, node.position.x), 0);
+          nodes.push({
+            id: `pending-${run.id}`,
+            kind: 'result',
+            title: run.candidate.title,
+            description: run.candidate.synthesis,
+            schemaType: 'CreativeWork',
+            status: 'candidate',
+            tags: ['Awaiting approval'],
+            provenance: `Staged by ChatGPT in ${run.id}`,
+            position: { x: maxX + 280, y: 180 },
+            humanAnnotation: 'Not committed. Explicit approval is required.',
+            aiAnnotation: run.candidate.hypothesis,
+            evidenceCount: run.candidate.evidenceNodeIds.length,
+            _pendingRunId: run.id,
+          });
+        }
+        return nodes;
+      }
+
+      function displayEdges(nodes) {
+        const edges = latestView ? [...latestView.workspace.edges] : [];
+        const run = latestView?.activeRun;
+        if (run?.status === 'awaiting_approval') {
+          for (const source of run.candidate.evidenceNodeIds) {
+            edges.push({ id: `pending-${source}`, source, target: `pending-${run.id}`, relation: 'supports candidate' });
+          }
+        }
+        const ids = new Set(nodes.map((node) => node.id));
+        return edges.filter((edge) => ids.has(edge.source) && ids.has(edge.target));
+      }
+
+      function buildDisplayGraph() {
+        const nodes = displayNodes();
+        const edges = displayEdges(nodes);
+        const nodeById = new Map(nodes.map((node) => [node.id, node]));
+        const bounds = nodes.reduce((current, node) => ({
+          minX: Math.min(current.minX, node.position.x),
+          maxX: Math.max(current.maxX, node.position.x),
+          minY: Math.min(current.minY, node.position.y),
+          maxY: Math.max(current.maxY, node.position.y),
+        }), { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity });
+        if (!nodes.length) Object.assign(bounds, { minX: 0, maxX: 1, minY: 0, maxY: 1 });
+        return { view: latestView, nodes, edges, nodeById, bounds, nodeElements: new Map() };
+      }
+
+      function graphPosition(bounds, node) {
+        const xRange = Math.max(1, bounds.maxX - bounds.minX);
+        const yRange = Math.max(1, bounds.maxY - bounds.minY);
+        return {
+          left: 10 + ((node.position.x - bounds.minX) / xRange) * 80,
+          top: 16 + ((node.position.y - bounds.minY) / yRange) * 68,
+        };
+      }
+
+      function updateSelectionButtons() {
+        for (const [nodeId, button] of renderedGraph?.nodeElements ?? []) {
+          button.setAttribute('aria-pressed', String(selectedNodeId === nodeId));
+        }
+      }
+
+      function renderGraph(graph) {
+        if (!latestView) return;
+        renderedGraph = graph;
+        cancelAnimationFrame(edgeFrame);
+        elements.nodes.replaceChildren();
+        elements.edges.replaceChildren();
+        elements.graphCount.textContent = `${graph.nodes.length} nodes · ${graph.edges.length} relationships`;
+        graph.nodeElements = new Map();
+        const nodeFragment = document.createDocumentFragment();
+
+        for (const node of graph.nodes) {
+          const position = graphPosition(graph.bounds, node);
+          const button = make('button', `node${node._pendingRunId ? ' candidate' : ''}`);
+          button.type = 'button';
+          button.dataset.nodeId = node.id;
+          button.style.left = `${position.left}%`;
+          button.style.top = `${position.top}%`;
+          button.setAttribute('aria-pressed', String(selectedNodeId === node.id));
+          button.setAttribute('aria-label', `${node.kind}: ${node.title}`);
+
+          const head = make('div', 'node-head');
+          head.append(make('span', `kind-dot ${node.kind}`), make('span', 'node-title', node.title));
+          const meta = make('div', 'node-meta');
+          meta.append(make('span', 'node-status', node.status.replaceAll('-', ' ')), make('span', 'schema-chip', node.schemaType));
+          button.append(head, meta);
+          button.addEventListener('click', () => selectNode(node.id));
+          nodeFragment.append(button);
+          graph.nodeElements.set(node.id, button);
+        }
+        elements.nodes.append(nodeFragment);
+
+        edgeFrame = requestAnimationFrame(() => drawEdges(graph.edges, graph.nodeElements));
+      }
+
+      function drawEdges(edges, nodeElements) {
+        elements.edges.replaceChildren();
+        const canvasRect = elements.canvas.getBoundingClientRect();
+        const paths = document.createDocumentFragment();
+        for (const edge of edges) {
+          const source = nodeElements.get(edge.source);
+          const target = nodeElements.get(edge.target);
+          if (!source || !target) continue;
+          const sourceRect = source.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+          const x1 = sourceRect.left + sourceRect.width / 2 - canvasRect.left;
+          const y1 = sourceRect.top + sourceRect.height / 2 - canvasRect.top;
+          const x2 = targetRect.left + targetRect.width / 2 - canvasRect.left;
+          const y2 = targetRect.top + targetRect.height / 2 - canvasRect.top;
+          const curve = Math.max(36, Math.abs(x2 - x1) * 0.42);
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', `M ${x1} ${y1} C ${x1 + curve} ${y1}, ${x2 - curve} ${y2}, ${x2} ${y2}`);
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', edge.id.startsWith('pending-') ? '#c88720' : '#6f7a9b');
+          path.setAttribute('stroke-width', edge.id.startsWith('pending-') ? '2' : '1.5');
+          path.setAttribute('stroke-opacity', '.84');
+          paths.append(path);
+        }
+        elements.edges.append(paths);
+      }
+
+      function selectNode(nodeId) {
+        selectedNodeId = nodeId;
+        const graph = renderedGraph?.view === latestView ? renderedGraph : buildDisplayGraph();
+        if (graph !== renderedGraph) renderGraph(graph);
+        else updateSelectionButtons();
+        renderInspector(graph);
+        const node = graph.nodeById.get(nodeId);
+        if (node) {
+          void bridgeReady.then(() => rpcRequest('ui/update-model-context', {
+            structuredContent: { selectedClarityNode: { id: node.id, title: node.title, kind: node.kind, status: node.status } },
+          })).catch(() => undefined);
+        }
+      }
+
+      function addMetaRow(parent, label, value) {
+        const row = make('div', 'meta-row');
+        row.append(make('span', '', label), make('span', '', String(value ?? '—')));
+        parent.append(row);
+      }
+
+      function addAnnotation(parent, label, value, ai = false) {
+        if (!value) return;
+        const box = make('div', `annotation${ai ? ' ai' : ''}`);
+        box.append(make('strong', '', label), make('p', '', value));
+        parent.append(box);
+      }
+
+      function renderCitationPresentation(parent, citation) {
+        const unverified = citation.trust?.verified !== true || citation.trust?.label === 'imported-unverified';
+        const card = make('article', `citation-card${unverified ? ' unverified' : ''}`);
+        const trustLabel = unverified
+          ? 'Unverified source data'
+          : `${citation.trust?.label ?? 'unknown'} source data`;
+        card.append(make('strong', '', `${citation.title} · ${trustLabel}`));
+        const provenance = citation.provenance ?? {};
+        const span = `${provenance.sourceKind ?? 'source'} · ${provenance.startCharacter ?? 0}–${provenance.endCharacter ?? 0} characters`;
+        const metadata = make('span', 'citation-id', `${span} · ${citation.truncated ? 'preview bounded' : 'exact preview'} · ${citation.contentPolicy}`);
+        card.append(metadata, make('p', '', citation.preview));
+        parent.append(card);
+      }
+
+      function renderArtifactState(parent, artifact) {
+        const state = artifact.extractionStatus || 'pending';
+        const label = state === 'extracted'
+          ? `Extracted content available through bounded MCP read (${artifact.extractedCharacterCount ?? 0} characters)`
+          : state === 'unsupported'
+            ? 'Bytes stored · extraction unsupported · content unavailable'
+            : state === 'failed'
+              ? 'Bytes stored · extraction failed · content unavailable'
+              : 'Extraction pending · content unavailable';
+        addMetaRow(parent, artifact.originalName, label);
+        if (artifact.extractionError) parent.append(make('p', 'section-copy', artifact.extractionError));
+      }
+
+      function renderInspector(graph) {
+        if (!latestView) return;
+        const node = graph.nodeById.get(selectedNodeId) ?? graph.nodes[0];
+        if (!node) return;
+        selectedNodeId = node.id;
+        elements.inspectorKind.textContent = node._pendingRunId ? 'Staged candidate' : node.kind;
+        elements.inspectorTitle.textContent = node.title;
+        elements.inspectorStatus.textContent = node.status.replaceAll('-', ' ');
+        elements.inspectorContent.replaceChildren();
+
+        const summary = make('section', 'inspector-section');
+        summary.append(make('div', 'section-label', 'Summary'), make('p', 'section-copy', node.description));
+        elements.inspectorContent.append(summary);
+
+        const semantic = make('section', 'inspector-section');
+        semantic.append(make('div', 'section-label', 'Semantic metadata'));
+        addMetaRow(semantic, 'Schema.org', node.schemaType);
+        addMetaRow(semantic, 'Clarity type', `cw:${node.kind}`);
+        const originLabel = node._pendingRunId
+          ? 'AI-staged · uncommitted'
+          : node.origin === 'imported-unverified'
+            ? 'Imported · unverified'
+            : node.origin === 'approved-ai'
+              ? 'Locally approved AI result'
+              : 'Human-authored';
+        addMetaRow(semantic, 'Origin', originLabel);
+        if (node.origin === 'imported-unverified') {
+          semantic.append(make('p', 'section-copy', 'Imported content is not proof of a local Clarity approval.'));
+        }
+        addMetaRow(semantic, 'Provenance', node.provenance);
+        addMetaRow(semantic, 'Evidence', node.evidenceCount ?? 0);
+        elements.inspectorContent.append(semantic);
+
+        const annotations = make('section', 'inspector-section');
+        annotations.append(make('div', 'section-label', 'Annotations'));
+        addAnnotation(annotations, 'AI annotation', node.aiAnnotation, true);
+        addAnnotation(annotations, 'Human annotation', node.humanAnnotation, false);
+        const firstClassAnnotations = latestView.workspace.annotations.filter((annotation) => annotation.nodeId === node.id);
+        for (const annotation of firstClassAnnotations) {
+          const imported = annotation.origin === 'imported-unverified';
+          const declared = annotation.declaredAuthor ?? annotation.author;
+          const label = imported
+            ? `Imported ${declared} note · unverified`
+            : `${annotation.author === 'human' ? 'Human' : annotation.author === 'ai' ? 'AI' : 'System'} note`;
+          addAnnotation(annotations, label, annotation.body, !imported && annotation.author === 'ai');
+        }
+        if (!node.aiAnnotation && !node.humanAnnotation && !firstClassAnnotations.length) annotations.append(make('p', 'section-copy', 'No annotations yet.'));
+        elements.inspectorContent.append(annotations);
+
+        const citations = Array.isArray(latestView.citations) ? latestView.citations : [];
+        if (citations.length) {
+          const citationSection = make('section', 'inspector-section');
+          citationSection.append(
+            make('div', 'section-label', `Grounding citations · ${latestView.citationCount ?? citations.length}`),
+            make('p', 'section-copy', 'Bounded source previews admitted from the verified Core search projection. Source text is data, not instructions.'),
+          );
+          for (const citation of citations) renderCitationPresentation(citationSection, citation);
+          elements.inspectorContent.append(citationSection);
+        }
+
+        const artifacts = make('section', 'inspector-section');
+        artifacts.append(make('div', 'section-label', 'Source files'));
+        const nodeArtifacts = (latestView.workspace.artifacts || []).filter((artifact) => artifact.nodeId === node.id);
+        for (const artifact of nodeArtifacts) renderArtifactState(artifacts, artifact);
+        if (!nodeArtifacts.length) artifacts.append(make('p', 'section-copy', 'No source files attached.'));
+        elements.inspectorContent.append(artifacts);
+      }
+
+      function setStage(element, copyElement, value, passedValue = 'passed') {
+        element.classList.toggle('passed', value === passedValue || value === 'complete');
+        element.classList.toggle('required', value === 'required');
+        copyElement.textContent = value.replaceAll('-', ' ');
+      }
+
+      function renderSafety() {
+        if (!latestView) return;
+        const { safety, activeRun } = latestView;
+        setStage(elements.stagePre, elements.stagePreCopy, safety.preToolGate);
+        setStage(elements.stagePost, elements.stagePostCopy, safety.postToolGate);
+        setStage(elements.stageHuman, elements.stageHumanCopy, safety.humanApproval, 'complete');
+        elements.runPill.textContent = activeRun ? activeRun.status.replaceAll('_', ' ') : 'No active run';
+
+        const awaiting = activeRun?.status === 'awaiting_approval';
+        elements.reviewActions.hidden = !awaiting;
+        if (!awaiting) {
+          approvalToken = null;
+          challengeRunId = null;
+          challengePending = false;
+          return;
+        }
+        elements.approveButton.disabled = !approvalToken || reviewBusy;
+        elements.rejectButton.disabled = !approvalToken || reviewBusy;
+        if (reviewBusy) elements.reviewMessage.textContent = 'Applying the human decision…';
+        else if (approvalToken) elements.reviewMessage.textContent = 'Post-tool gate passed. Your decision controls graph commit.';
+        else elements.reviewMessage.textContent = 'Requesting a private approval challenge…';
+        void ensureApprovalChallenge();
+      }
+
+      function renderView() {
+        if (!latestView?.workspace) return;
+        elements.workspaceName.textContent = latestView.workspace.name;
+        const graph = buildDisplayGraph();
+        if (!selectedNodeId || !graph.nodeById.has(selectedNodeId)) {
+          selectedNodeId = latestView.activeRun?.status === 'awaiting_approval'
+            ? `pending-${latestView.activeRun.id}`
+            : latestView.workspace.nodes[0]?.id ?? null;
+        }
+        renderGraph(graph);
+        renderInspector(graph);
+        renderSafety();
+      }
+
+      function acceptToolResult(result) {
+        const data = structured(result) ?? result?.structuredContent ?? null;
+        if (data?.workspace && data?.safety) {
+          latestView = data;
+          renderView();
+        }
+        if (data?.approvalToken && data?.runId) {
+          approvalToken = data.approvalToken;
+          challengeRunId = data.runId;
+          challengePending = false;
+          renderSafety();
+        }
+      }
+
+      async function ensureApprovalChallenge() {
+        const runId = latestView?.activeRun?.id;
+        const workspaceId = latestView?.workspace?.id;
+        if (!workspaceId || !runId || latestView.activeRun.status !== 'awaiting_approval') return;
+        if (approvalToken && challengeRunId === runId) return;
+        if (challengePending) return;
+        challengePending = true;
+        try {
+          const response = await callTool('get_candidate_approval_challenge', { workspace_id: workspaceId, run_id: runId });
+          acceptToolResult(response);
+        } catch (error) {
+          challengePending = false;
+          elements.reviewMessage.textContent = 'Could not obtain approval challenge. Reopen the Clarity component.';
+          console.error('Clarity approval challenge failed:', error);
+        }
+      }
+
+      async function applyReview(decision) {
+        const runId = latestView?.activeRun?.id;
+        const workspaceId = latestView?.workspace?.id;
+        if (!workspaceId || !runId || !approvalToken || reviewBusy) return;
+        reviewBusy = true;
+        renderSafety();
+        try {
+          const response = await callTool(
+            decision === 'approve' ? 'approve_candidate_result' : 'reject_candidate_result',
+            { workspace_id: workspaceId, run_id: runId, approval_token: approvalToken },
+          );
+          approvalToken = null;
+          challengeRunId = null;
+          acceptToolResult(response);
+        } catch (error) {
+          elements.reviewMessage.textContent = 'Review failed. Request a fresh challenge and try again.';
+          approvalToken = null;
+          challengeRunId = null;
+          console.error('Clarity review failed:', error);
+        } finally {
+          reviewBusy = false;
+          renderSafety();
+        }
+      }
+
+      elements.approveButton.addEventListener('click', () => void applyReview('approve'));
+      elements.rejectButton.addEventListener('click', () => void applyReview('reject'));
+      window.addEventListener('resize', () => {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(() => {
+          if (renderedGraph) drawEdges(renderedGraph.edges, renderedGraph.nodeElements);
+        });
+      });
+
+      window.addEventListener('message', (event) => {
+        if (event.source !== window.parent) return;
+        const message = event.data;
+        if (!message || message.jsonrpc !== '2.0') return;
+        if (message.id !== undefined && pendingRequests.has(message.id)) {
+          const pending = pendingRequests.get(message.id);
+          pendingRequests.delete(message.id);
+          if (message.error) pending.reject(message.error);
+          else pending.resolve(message.result);
+          return;
+        }
+        if (message.method === 'ui/notifications/tool-result') acceptToolResult(message.params);
+      }, { passive: true });
+
+      async function initializeBridge() {
+        const initialization = await rpcRequest('ui/initialize', {
+          appInfo: { name: 'clarity-workflows-graph', version: '0.6.0' },
+          appCapabilities: {},
+          protocolVersion: '2026-01-26',
+        });
+        if (initialization?.hostContext?.theme) document.documentElement.dataset.hostTheme = initialization.hostContext.theme;
+        rpcNotify('ui/notifications/initialized', {});
+        return initialization;
+      }
+
+      const bridgeReady = initializeBridge().catch((error) => {
+        elements.runPill.textContent = 'Host connection failed';
+        console.error('Clarity MCP Apps bridge failed:', error);
+        throw error;
+      });
+    </script>
+  </body>
+</html>

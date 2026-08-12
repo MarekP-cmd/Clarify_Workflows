@@ -1,0 +1,9 @@
+interface:
+  display_name: "Clarity Workflows"
+  short_description: "Run gated research and coding workflows"
+  default_prompt: "Use $clarity-workflows to open my visual graph and show the current workspace."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
+  brand_color: "#FFD45F"
+policy:
+  allow_implicit_invocation: false

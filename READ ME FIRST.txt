@@ -1,0 +1,34 @@
+CLARITY WORKFLOWS v0.6.0 — CHUNK 4 SOURCE RELEASE / PRIVATE CHATGPT TEST
+
+DESKTOP FROM SOURCE
+
+1. Install Node.js 22.13 or newer.
+2. Open a terminal in this extracted folder.
+3. Run: npm ci
+4. Run: npm run desktop
+5. Create a real workspace. A clean Core intentionally starts empty.
+
+PRIVATE CHATGPT CONNECTION ON WINDOWS
+
+There is one operator-facing start file:
+
+    START CLARITY WORKFLOWS.bat
+
+1. Extract the complete ZIP to a permanent folder.
+2. Double-click START CLARITY WORKFLOWS.bat. First use may download checksummed official Node and tunnel runtimes and install lockfile-pinned production packages.
+3. Let Clarity test its local Core and MCP server and start the configured tunnel.
+4. If connection binding is requested, paste the page address of the EXISTING Clarity Workflows connection. Its ID starts with plugin_asdk_app_. Do not paste a tunnel_ ID.
+5. If no valid encrypted tunnel credential exists, enter a runtime key with Tunnels Read + Use. Clarity validates it before saving a Windows-user-encrypted copy. A normal upgrade reuses the saved key; do not create another one.
+6. Refresh the account-owned Clarity Workflows developer connection so it reads this v0.6.0 package, then select it in the ChatGPT conversation that opens.
+7. Press Ctrl+V and send the copied live test prompt.
+8. Keep the launcher open. End-to-end success means it prints:
+
+       FULLY VERIFIED: CHATGPT CALLED CLARITY
+
+The desktop and ChatGPT server share one SQLite Clarity Core. Production contains no mock workspace, sleep-research seed, or browser-storage fallback.
+
+Chunk 2 delivers the complete human graph workspace. v0.5.0 Chunk 3 adds real-file managed storage, explicit extraction state, bounded inspector previews, and bounded MCP content reads only for extracted artifacts. v0.6.0 Chunk 4 adds a revision-bound local search projection, bounded plain-text search, exact hash-bound passage retrieval, MCP search/retrieval transport, Core-refetched citation admission, and bounded citation presentation in the review component.
+
+The historical v0.3.0 Chunk 1 report mislabeled file ingestion as Chunk 2. The authoritative sequence assigns Complete Human Graph Workspace to Chunk 2, Real File and Dataset Ingestion to Chunk 3, and Grounded Search, Retrieval and Provenance to Chunk 4. Unsupported, pending, failed, missing, or tampered bytes remain unavailable as readable MCP or search content. Read CLARITY_V0.6.0_CHUNK4_REPORT.md and CLARITY_PROJECT_HANDOFF.md for exact boundaries, pending release gates, and verification evidence.
+
+The automated browser gate covers bundled Chromium only, and native Electron-window smoke remains a display-capable host check. This is a private-development source release, not a signed installer, hosted multi-user service, OAuth deployment, or public marketplace release.

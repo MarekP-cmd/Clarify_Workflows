@@ -1,0 +1,14 @@
+interface:
+  display_name: Wayfinder
+  short_description: Map a large effort as decision tickets
+  default_prompt: Use $wayfinder to map this large effort into a decision tree and
+    staged tickets.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: false
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas

@@ -1,0 +1,10 @@
+node_modules/
+release/
+.stryker-tmp/
+reports/
+plugin/dist/
+plugin/data/workspace.json
+plugin/data/*.corrupt-*.json
+.app.json
+*.tsbuildinfo
+.DS_Store

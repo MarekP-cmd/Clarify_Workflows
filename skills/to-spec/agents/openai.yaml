@@ -1,0 +1,7 @@
+interface:
+  display_name: "To Spec"
+  short_description: "Turn a conversation into a spec"
+  default_prompt: "Use $to-spec to turn our current discussion into a precise implementation specification."
+
+policy:
+  allow_implicit_invocation: false

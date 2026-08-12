@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="background" x1="72" y1="52" x2="442" y2="474" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#182131"/>
+      <stop offset="1" stop-color="#090C13"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="188" y1="188" x2="410" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF5B5" stop-opacity="0.96"/>
+      <stop offset="0.46" stop-color="#FFD45F" stop-opacity="0.68"/>
+      <stop offset="1" stop-color="#F7B733" stop-opacity="0.20"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(168 168) rotate(45) scale(68)">
+      <stop stop-color="#FFFDF0"/>
+      <stop offset="0.72" stop-color="#FFF2A8"/>
+      <stop offset="1" stop-color="#FFD15C"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#background)"/>
+  <path d="M182 182L455 303C470 310 474 329 462 341L341 462C329 474 310 470 303 455L182 182Z" fill="url(#beam)"/>
+  <path d="M168 71V43" stroke="#FFD66B" stroke-width="18" stroke-linecap="round"/>
+  <path d="M99.4 99.4L79.6 79.6" stroke="#FFD66B" stroke-width="18" stroke-linecap="round"/>
+  <path d="M71 168H43" stroke="#FFD66B" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="168" cy="168" r="61" fill="url(#sun)"/>
+</svg>

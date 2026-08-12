@@ -1,0 +1,32 @@
+{
+  "name": "clarity-workflows",
+  "version": "0.6.0",
+  "description": "A visual, human-controlled graph for bounded AI-assisted research and coding workflows.",
+  "keywords": [
+    "research",
+    "coding",
+    "knowledge graph",
+    "human approval",
+    "MCP"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Clarity Workflows",
+    "shortDescription": "Visual, gated AI research workflows",
+    "longDescription": "Organize papers, books, datasets, hypotheses, code, and results as a visual graph. Use two adjustable validation gates around side-effect-free ChatGPT reasoning and require explicit human approval before a candidate becomes part of the graph.",
+    "developerName": "Clarity Workflows",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Open my Clarity research graph and show me the active evidence paths.",
+      "Use Clarity to inspect my current graph, ask me which real source nodes to use, pressure-test a hypothesis, and stage the result for my approval."
+    ],
+    "brandColor": "#7568F7",
+    "composerIcon": "./assets/clarity-icon.svg",
+    "logo": "./assets/clarity-icon.svg",
+    "screenshots": []
+  }
+}
